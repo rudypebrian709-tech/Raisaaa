@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biodata Super Lengkap</title>
+
+<!-- jsPDF + html2canvas untuk download PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+/* =============== LOADING SCREEN =============== */
+#loadingScreen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeOut 1.5s forwards;
+  animation-delay: 1.2s;
+}
+
+.loadingText {
+  color: white;
+  font-size: 30px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; visibility: hidden; }
+}
+
+/* =============== PARTICLE BACKGROUND =============== */
+#particleCanvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: -1;
+}
+
+/* =============== GLASS EFFECT CONTAINER =============== */
+.container {
+  width: 90%;
+  max-width: 520px;
+  margin: auto;
+  padding: 25px;
+  border-radius: 20px;
+  backdrop-filter: blur(15px);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: 0 0 25px rgba(255,255,255,0.3);
+  color: white;
+  margin-top: 50px;
+  position: relative;
+  z-index: 2;
+}
+
+/* FOTO */
+.foto {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 10px auto 20px;
+  border: 4px solid #fff;
+  box-shadow: 0 0 20px #fff;
+}
+
+.foto img { width: 100%; height: 100%; object-fit: cover; }
+
+/* BUTTON */
+.btn, .musicBtn, .darkBtn, .pdfBtn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  color: white;
+  background: #005fff;
+  transition: 0.3s;
+}
+.btn:hover, .musicBtn:hover, .darkBtn:hover, .pdfBtn:hover {
+  transform: scale(1.05);
+  background: #003fbb;
+}
+
+/* INPUT */
+input {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
+
+.message {
+  margin-top: 15px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loadingScreen">
+  <div class="loadingText">Loading...</div>
+</div>
+
+<!-- PARTICLE BACKGROUND -->
+<canvas id="particleCanvas"></canvas>
+
+<div class="container" id="captureArea">
+
+  <h1 style="text-align:center">Biodata Diri</h1>
+
+  <div class="foto">
+    <img id="imgPreview" src="epep.jpg">
+  </div>
+
+  <input type="file" id="uploadFoto" accept="image/*">
+
+  <div id="outputBiodata"></div>
+
+  <button class="btn" onclick="tampilkanPesan()">Tampilkan Pesan</button>
+  <div class="message" id="pesanBox" style="display:none">Halo, ini pesan dari JavaScript! 😄</div>
+
+  <h3>Update Biodata</h3>
+  <input id="nama" placeholder="Nama tata casmito">
+  <input id="jk" placeholder="Jenis Kelamin">
+  <input id="ttl" placeholder="Tempat Tanggal Lahir">
+  <input id="alamat" placeholder="Alamat">
+  <input id="hobi" placeholder="Hobi">
+
+  <button class="btn" onclick="updateBiodata()">Simpan Biodata</button>
+
+  <button class="darkBtn" onclick="toggleDark()">Dark Mode</button>
+
+  <button class="musicBtn" onclick="toggleMusic()">Play / Pause Musik</button>
+  <audio id="bgMusic" loop>
+    <source src="https://files.catbox.moe/9k94vy.mp3">
+  </audio>
+
+  <button class="pdfBtn" onclick="downloadPDF()">Download Biodata (PDF)</button>
+
+</div>
+
+<script>
+/* ================= PARTICLE EFFECT ================= */
+const canvas = document.getElementById("particleCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+let particles = [];
+
+for (let i=0; i<80; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    size: Math.random()*3 + 1,
+    speedX: Math.random()*1 - 0.5,
+    speedY: Math.random()*1 - 0.5
+  });
+}
+
+function animateParticles() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  particles.forEach(p => {
+    p.x += p.speedX;
+    p.y += p.speedY;
+
+    if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+/* ============ TAMPILKAN PESAN ============ */
+function tampilkanPesan() {
+  const box = document.getElementById("pesanBox");
+  box.style.display = box.style.display === "block" ? "none" : "block";
+}
+
+/* ============ SIMPAN BIODATA LOCALSTORAGE ============ */
+function updateBiodata() {
+  const biodata = {
+    nama: nama.value,
+    jk: jk.value,
+    ttl: ttl.value,
+    alamat: alamat.value,
+    hobi: hobi.value
+  };
+  localStorage.setItem("bioData", JSON.stringify(biodata));
+  tampilkanBiodata();
+}
+
+function tampilkanBiodata() {
+  const data = JSON.parse(localStorage.getItem("bioData")) || {
+    nama: "TATA CASMITO",
+    jk: "Laki-laki",
+    ttl: "Bandung, 10 Mei 2007",
+    alamat: "Indonesia",
+    hobi: "Gaming, Editing, Coding"
+  };
+
+  outputBiodata.innerHTML = `
+    <p><b>Nama:</b> ${data.nama}</p>
+    <p><b>Jenis Kelamin:</b> ${data.jk}</p>
+    <p><b>TTL:</b> ${data.ttl}</p>
+    <p><b>Alamat:</b> ${data.alamat}</p>
+    <p><b>Hobi:</b> ${data.hobi}</p>
+  `;
+}
+tampilkanBiodata();
+
+/* ============ DARK MODE ============ */
+function toggleDark() {
+  document.body.style.background = document.body.style.background ? "" : "#000";
+}
+
+/* ============ UPLOAD FOTO ============ */
+uploadFoto.addEventListener("change", function() {
+  const file = this.files[0];
+  const reader = new FileReader();
+  reader.onload = () => {
+    imgPreview.src = reader.result;
+    localStorage.setItem("fotoProfil", reader.result);
+  };
+  reader.readAsDataURL(file);
+});
+
+if(localStorage.getItem("fotoProfil")){
+  imgPreview.src = localStorage.getItem("fotoProfil");
+}
+
+/* ============ MUSIC ============ */
+function toggleMusic() {
+  const music = document.getElementById("bgMusic");
+  music.paused ? music.play() : music.pause();
+}
+
+/* ============ DOWNLOAD PDF ============ */
+async function downloadPDF() {
+  const element = document.getElementById("captureArea");
+  const canvas = await html2canvas(element);
+  const imgData = canvas.toDataURL("image/png");
+
+  const pdf = new jspdf.jsPDF({
+    orientation: "p",
+    unit: "mm",
+    format: "a4"
+  });
+
+  const width = pdf.internal.pageSize.getWidth();
+  const height = canvas.height * width / canvas.width;
+
+  pdf.addImage(imgData, "PNG", 0, 0, width, height);
+  pdf.save("Biodata.pdf");
+}
+</script>
+
+</body>
+</html>
